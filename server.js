@@ -33,6 +33,37 @@ function cached_requester(url, cb) {
 
 var beaches = [];
 
+var first_page = function(url) {
+	console.log('url ======>', url);
+	if (url == '') return;
+	index_site = -1;
+	sites = [];
+	urls = [];
+	++counter;
+	console.log('counter =>', counter);
+	if (10 <= counter) return;
+	if (url === "") return;
+	cached_requester(url, function(error, response, html){
+		if (error) {
+			console.log("ERROR FIRST PAGE:", error);
+			return;
+		}
+		console.log('URL ===>', url);
+		var $ = cheerio.load(html);
+		urls = [].map.call($('a.title'), url => url.attribs.href);
+// 		console.log(Object.keys(urls).length, urls.length);
+// 		urls = $('a.title').slice();
+// 		console.log(Object.keys(urls).length, urls.length);
+// 		return
+		url_next = $(".pagination > a[title='Next']").attr('href');
+		url = " http://www.kijiji.ca"+url_next;
+		console.log('url_next ===>', url);
+		console.log('urls =>', urls);
+		sites = sites.concat(urls);
+		test_next();
+	});
+};
+
 var test_next = function() {
 	index_site = index_site + 1;
 	if (sites[index_site] === undefined) {
@@ -89,38 +120,6 @@ app.post('/add', urlencodedParser, function(req, res, next) {
 app.post('/refresh', function(req, res, next) {
 	res.render("index.ejs", { layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON, zoom:12, beaches:JSON.stringify(beaches)});
 });
-
-var first_page = function(url) {
-	console.log('url ======>', url);
-	if (url == '') return;
-	index_site = -1;
-	sites = [];
-	urls = [];
-	++counter;
-	console.log('counter =>', counter);
-	if (10 <= counter) return;
-	// url = 'http://www.kijiji.ca/b-appartement-condo/ville-de-quebec/c37l1700124r2.0?ad=offering';
-	if (url === "") return;
-	cached_requester(url, function(error, response, html){
-		if (error) {
-			console.log("ERROR FIRST PAGE:", error);
-			return;
-		}
-		console.log('URL ===>', url);
-		var $ = cheerio.load(html);
-		// $('.container-results').filter(function(){
-		urls = [].map.call($('a.title'), function(link) {
-			return link;
-		});
-		url_next = $(".pagination > a[title='Suivante']").attr('href');
-		url = " http://www.kijiji.ca"+url_next;
-		console.log('url_next ===>', url);
-		Object.keys(urls).forEach(function(trait) {
-			sites.push(urls[trait].attribs.href);
-		});
-		test_next();
-	});
-};
 
 app.listen('8081');
 console.log('Magic happens on port 8081');
