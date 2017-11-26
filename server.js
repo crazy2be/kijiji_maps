@@ -2,20 +2,16 @@ var express = require('express');
 var fs = require('fs');
 var request = require('request');
 var cheerio = require('cheerio');
-var app     = express();
-
-var bodyParser = require('body-parser');
-var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 var DEFAULT_LAT = 43.461277;
 var DEFAULT_LON = -80.521149;
 
 function cached_requester(url, cb) {
 	var fname = 'html/' + encodeURIComponent(url);
-	console.log("Caching to ", fname);
 	if (fs.existsSync(fname)) {
 		cb(null, url, fs.readFileSync(fname));
 	} else {
+		console.log("Downlaoding", url);
 		request(url, (err, response, html1) => {
 			if (!err) fs.writeFileSync(fname, html1);
 			cb(err, url, html1);
@@ -23,7 +19,7 @@ function cached_requester(url, cb) {
 	}
 }
 
-var beaches = [];
+var global_beaches = [];
 
 var search_page = function(url) {
 	console.log('url ======>', url);
@@ -52,15 +48,14 @@ var ad_page = function(urls, cb) {
 		cb();
 		return;
     }
-	cached_requester(urls[0], function(error, url, html1){
-		console.log('search page');
+	cached_requester(urls[0], (error, url, html) => {
 		console.log('url_page =>', url);
 		if (error) {
 			console.log("ERROR:", error);
 			return;
 		}
-		var $ = cheerio.load(html1, {normalizeWhitespace: true});
-		var clean = s => (console.log("s:", s), (s||'').replace(/\"/g,'').replace("/\\/g",'').replace(/(\n|\r)/gm,'').replace(/    /g, ''));
+		var $ = cheerio.load(html, {normalizeWhitespace: true});
+		var clean = s => (s||'').replace(/\"/g,'').replace("/\\/g",'').replace(/(\n|\r)/gm,'').replace(/    /g, '');
 
 		var address   = clean($('span[class^="address-"]').text());
 		var price     = clean($('span[class^="currentPrice-"]').text());
@@ -77,33 +72,23 @@ var ad_page = function(urls, cb) {
 
 		ad = {address: address, price: price, url: url, title: title,
 			lat: lat, lon: lon, description: description};
-		console.log('json ===>',ad);
-		beaches.push(ad);
+		//console.log('json ===>',ad);
+		global_beaches.push(ad);
 
 		ad_page(urls.slice(1), cb);
 	});
 };
 
-
-app.get('/maps', function(req, res, next){
-	res.render("index.ejs", {layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON, zoom:12, beaches:JSON.stringify(beaches)});
+var app = express();
+app.get('/', (req, res, next) => {
+	res.render("index.ejs", {
+		layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON,
+		zoom: 12, beaches: JSON.stringify(global_beaches)});
 	next();
-});
-
-app.post('/add', urlencodedParser, function(req, res, next) {
-	counter = 0;
-	search_page(req.body.url);
-	console.log('beaches =>', beaches);
-	res.render("index.ejs", { layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON, zoom:12, beaches:JSON.stringify(beaches)});
-	next();
-});
-
-app.post('/refresh', function(req, res, next) {
-	res.render("index.ejs", { layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON, zoom:12, beaches:JSON.stringify(beaches)});
 });
 
 app.listen('8081');
 console.log('Magic happens on port 8081');
 exports = module.exports = app;
 
-search_page("https://www.kijiji.ca/b-real-estate/kitchener-waterloo/c34l1700212?ll=43.461277,-80.521149");
+search_page("https://www.kijiji.ca/b-real-estate/kitchener-waterloo/c34l1700212r5.0?address=155+King+St+S%2C+Waterloo%2C+ON&ll=43.461277,-80.521149");

@@ -1,9 +1,8 @@
 <html>
 	<head>
 		<title>Kijiji Maps</title>
-		 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
-
-		<script type="text/javascript">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+		<script>
 			var infowindow;
 			var bounds;
 
@@ -32,15 +31,18 @@
 					var marker = new google.maps.Marker({
 						position: new google.maps.LatLng(beach.lat, beach.lon),
 						map: map,
-						title: beach[0],
-						// zIndex: beach[3]
+						title: beach[0]
 					});
 					bounds.extend(marker.position);
-					bindInfoWindow(marker, map, infowindow, '<h3>'+beach.title+'</h3><a href="'+beach.url+'" target="_blank">View on Kijiji</a><br>'+beach.price+'<br>'+beach.description);
+					bindInfoWindow(marker, map, infowindow, [
+						'<h3>', beach.title, '</h3>',
+						'<a href="', beach.url, '" target="_blank">View on Kijiji</a>', '<br>',
+						beach.price, '<br>',
+						beach.address, '<br>',
+						beach.description
+					].join(' '));
 					console.log(marker);
 				}
-
-			//map.fitBounds(bounds);
 			}
 
 
@@ -56,16 +58,16 @@
 		<script async defer
 			src="https://maps.googleapis.com/maps/api/js?callback=initMap">
 		</script>
+		<style>
+		body { margin: 0; padding: 0; }
+		#map {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+		}
+		</style>
 	</head>
 	<body>
-		<form action="/add" method="post" accept-charset="utf-8">
-			<label for="url">URL Kijiji: </label>
-			<input type="text" name="url" id="url">
-			<input type="submit" value="Send"/>
-		</form>
-		<form action="/refresh" method="post" accept-charset="utf-8">
-			<input id="loadButton" value="Reload" type="submit" type="button">
-		</form>
-		<div id="map" style="width:900px;height:500px;"></div>
+		<div id="map"></div>
 	</body>
 </html>
