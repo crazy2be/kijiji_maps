@@ -3,52 +3,35 @@
 		<title>Kijiji Maps</title>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
 		<script>
-			var infowindow;
-			var bounds;
+		var beaches =  <%- beaches %>
+		console.log(beaches);
 
-			function initMap() {
-				var map = new google.maps.Map(document.getElementById('map'), {
-					center: new google.maps.LatLng(<%=lat%>, <%=lon%>),
-					zoom: <%=zoom%>,
-					mapTypeId: google.maps.MapTypeId.ROADMAP
+		function initMap() {
+			var map = new google.maps.Map(document.getElementById('map'), {
+				center: new google.maps.LatLng(<%=lat%>, <%=lon%>),
+				zoom: <%=zoom%>,
+				mapTypeId: google.maps.MapTypeId.ROADMAP
+			});
+
+			for (var i = 0; i < beaches.length; i++) {
+				var beach = beaches[i];
+				var marker = new google.maps.Marker({
+					position: new google.maps.LatLng(beach.lat, beach.lon),
+					map: map,
+					title: beach[0]
 				});
-				infowindow =  new google.maps.InfoWindow({
-	  			    content: ''
-	  			});
-	  			bounds = new google.maps.LatLngBounds();
-				setMarkers(map);
-			  }
-
-			var beaches =  <%- beaches %>
-			console.log(beaches);
-
-			function setMarkers(map) {
-
-				for (var i = 0; i < beaches.length; i++) {
-					var beach = beaches[i];
-					var marker = new google.maps.Marker({
-						position: new google.maps.LatLng(beach.lat, beach.lon),
-						map: map,
-						title: beach[0]
-					});
-					bounds.extend(marker.position);
-					bindInfoWindow(marker, map, infowindow, [
-						'<h3>', beach.title, '</h3>',
-						'<a href="', beach.url, '" target="_blank">View on Kijiji</a>', '<br>',
-						beach.price, '<br>',
-						beach.address, '<br>',
-						beach.description
-					].join(' '));
-					console.log(marker);
-				}
-			}
-
-			var bindInfoWindow = function(marker, map, infowindow, html) {
-				google.maps.event.addListener(marker, 'click', function() {
-					infowindow.setContent(html);
-					infowindow.open(map, marker);
+				let html = [
+					'<h3>', beach.title, '</h3>',
+					'<a href="', beach.url, '" target="_blank">View on Kijiji</a>', '<br>',
+					beach.price, '<br>',
+					beach.address, '<br>',
+					beach.description
+				].join(' ');
+				google.maps.event.addListener(marker, 'click', () => {
+					info.innerHTML = html;
 				});
 			}
+		}
 		</script>
 		<script async defer
 			src="https://maps.googleapis.com/maps/api/js?callback=initMap">
@@ -57,12 +40,20 @@
 		body { margin: 0; padding: 0; }
 		#map {
 			position: absolute;
-			width: 100%;
+			width: 80%;
 			height: 100%;
+		}
+		#info {
+			position: absolute;
+			width: 19%;
+			height: 100%;
+			right: 0.5%;
+			overflow-x: scroll;
 		}
 		</style>
 	</head>
 	<body>
 		<div id="map"></div>
+		<div id="info"></div>
 	</body>
 </html>
