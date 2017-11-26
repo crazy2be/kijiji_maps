@@ -19,9 +19,7 @@
 				setMarkers(map);
 			  }
 
-			if (typeof <%- JSON.stringify(beaches) %> !== undefined){
-				var beaches =  <%- beaches %>
-			}
+			var beaches =  <%- beaches %>
 			console.log(beaches);
 
 			function setMarkers(map) {
@@ -45,15 +43,12 @@
 				}
 			}
 
-
-
 			var bindInfoWindow = function(marker, map, infowindow, html) {
 				google.maps.event.addListener(marker, 'click', function() {
 					infowindow.setContent(html);
 					infowindow.open(map, marker);
 				});
 			}
-
 		</script>
 		<script async defer
 			src="https://maps.googleapis.com/maps/api/js?callback=initMap">
