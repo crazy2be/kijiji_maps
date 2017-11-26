@@ -15,6 +15,8 @@ var sites      = [];
 var address    = [];
 var index_site = -1;
 var counter = 0;
+var DEFAULT_LAT = 43.461277;
+var DEFAULT_LON = -80.521149;
 
 function cached_requester(url, cb) {
 	var fname = 'html/' + encodeURIComponent(url);
@@ -31,13 +33,10 @@ function cached_requester(url, cb) {
 
 var beaches = [];
 
-var test_next = function(req, res, next) {
+var test_next = function() {
 	index_site = index_site + 1;
 	if (sites[index_site] === undefined) {
-		var info = '{"info":['+address+']}';
-		req.body.url = url;
-		first_page(req, res, next);
-		next();
+		console.log("No site for index", index_site, sites);
 		return;
     }
 	var url_page = 'http://www.kijiji.ca'+sites[index_site];
@@ -53,51 +52,47 @@ var test_next = function(req, res, next) {
 
 		var address   = clean($('span[class^="address-"]').text());
 		var price     = clean($('span[class^="currentPrice-"]').text());
-		var title_ad  = clean($('h1').text());
-		var latitude  = $('meta[property="og:latitude"]').attr('content')*1;
-		var longitude = $('meta[property="og:longitude"]').attr('content')*1;
+		var title  = clean($('h1').text());
+		var lat  = $('meta[property="og:latitude"]').attr('content')*1;
+		var lon = $('meta[property="og:longitude"]').attr('content')*1;
 		var description = $('#ViewItemPage').text();
-		// console.log('AD =>', ad);
+
 		if (description.length < 5) {
 			console.log("[Empty ad]");
 			console.log("[This is probably a parse error]");
-			return test_next(req, res, next);
+			return test_next();
 		}
 
-		ad = {address: address, price: price, url: url, title_ad: title_ad,
-			latitude: latitude, longitude: longitude, description: description};
+		ad = {address: address, price: price, url: url, title: title,
+			lat: lat, lon: lon, description: description};
 		console.log('json ===>',ad);
 		beaches.push(ad);
 
-		test_next(req, res, next);
+		test_next();
 	});
 };
 
 
 app.get('/maps', function(req, res, next){
-	res.render("index.ejs", {layout: false, lat:46.8357689, lon:-71.220735, zoom:12, beaches:JSON.stringify(beaches)});
+	res.render("index.ejs", {layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON, zoom:12, beaches:JSON.stringify(beaches)});
 	next();
 });
-
-// app.use(test_next);
 
 app.post('/add', urlencodedParser, function(req, res, next) {
 	counter = 0;
 	first_page(req, res, next);
 	console.log('beaches =>', beaches);
-	res.render("index.ejs", { layout: false, lat:46.8357689, lon:-71.220735, zoom:12, beaches:JSON.stringify(beaches)});
-
+	res.render("index.ejs", { layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON, zoom:12, beaches:JSON.stringify(beaches)});
+	next();
 });
 
 app.post('/refresh', function(req, res, next) {
-	// first_page(req, res, next);
-		res.render("index.ejs", { layout: false, lat:46.8357689, lon:-71.220735, zoom:12, beaches:JSON.stringify(beaches)});
+	res.render("index.ejs", { layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON, zoom:12, beaches:JSON.stringify(beaches)});
 });
 
-var first_page = function(req, res, next) {
-	console.log('req.body.url ======>', req.body.url);
-	if (req.body.url == '') return;
-	url = req.body.url;
+var first_page = function(url) {
+	console.log('url ======>', url);
+	if (url == '') return;
 	index_site = -1;
 	sites = [];
 	urls = [];
@@ -123,11 +118,12 @@ var first_page = function(req, res, next) {
 		Object.keys(urls).forEach(function(trait) {
 			sites.push(urls[trait].attribs.href);
 		});
-		req.sites = sites;
-		test_next(req, res, next);
+		test_next();
 	});
 };
 
 app.listen('8081');
 console.log('Magic happens on port 8081');
 exports = module.exports = app;
+
+first_page("https://www.kijiji.ca/b-real-estate/kitchener-waterloo/c34l1700212?ll=43.461277,-80.521149");

@@ -30,16 +30,17 @@
 				for (var i = 0; i < beaches.length; i++) {
 					var beach = beaches[i];
 					var marker = new google.maps.Marker({
-						position: new google.maps.LatLng(beach[2], beach[3]),
+						position: new google.maps.LatLng(beach.lat, beach.lon),
 						map: map,
 						title: beach[0],
 						// zIndex: beach[3]
 					});
 					bounds.extend(marker.position);
-					bindInfoWindow(marker, map, infowindow, '<h3>'+beach[5]+'</h3><a href="'+beach[4]+'" target="_blank">Voir sur Kijiji</a><br>'+beach[0]+'<br>'+beach[1]);
+					bindInfoWindow(marker, map, infowindow, '<h3>'+beach.title+'</h3><a href="'+beach.url+'" target="_blank">View on Kijiji</a><br>'+beach.price+'<br>'+beach.description);
+					console.log(marker);
 				}
 
-			map.fitBounds(bounds);
+			//map.fitBounds(bounds);
 			}
 
 
