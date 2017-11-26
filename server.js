@@ -22,6 +22,18 @@ var counter = 0;
 //    , format = require('util').format;
 //var db = monk('localhost:27017/nodetest1');
 
+function cached_requester(url, cb) {
+	var fname = 'html/' + encodeURIComponent(url);
+	console.log("Caching to ", fname);
+	if (fs.existsSync(fname)) {
+		cb(null, url, fs.readFileSync(fname));
+	} else {
+		request(url, (err, response, html1) => {
+			if (!err) fs.writeFileSync(fname, html1);
+			cb(err, url, html1);
+		});
+	}
+}
 
 var beaches = [];
 
@@ -49,9 +61,9 @@ var test_next = function(req, res, next) {
 // 		beaches.push([docs[0].address, docs[0].price, docs[0].lat, docs[0].lon, docs[0].url, docs[0].title_ad]);
 // 		return;
 // 	}
-	request(url_page, function(error, response, html1){
+	cached_requester(url_page, function(error, url, html1){
 		console.log('search page');
-		console.log('url_page =>', response.request.uri.href);
+		console.log('url_page =>', url);
 		if (error) {
 			console.log("ERROR:", error);
 			return;
@@ -59,32 +71,26 @@ var test_next = function(req, res, next) {
 		var $ = cheerio.load(html1, {
 			normalizeWhitespace: true,
 		});
-		var ad = $('#ViewItemPage').text();
 		// console.log('ad =>',ad);
-		var url_page1 = response.request.uri.href;
-		var price     = $('[itemprop="price"]').text();
-		var title_ad  = $('h1').text();
-		var latitude  = $('meta[property="og:latitude"]').attr('content')*1;
-		var longitude = $('meta[property="og:longitude"]').attr('content')*1;
-		title_ad      = title_ad.replace(/\"/g,'');
-		title_ad      = title_ad.replace(/\\/g,'');
-		price         = price.replace(/\"/g,'');
-		ad            = ad.replace(/\"/g,'');
+		var clean = s => (s||'').replace(/\"/g,'').replace("/\\/g",'').replace(/(\n|\r)/gm,'').replace(/    /g, '');
+		var address   = clean($('span[class^="address-"]').text());
+		var price     = clean($('span[class^="currentPrice-"]').text());
+		var title_ad  = clean($('h1').text());
+		var latitude  = clean($('meta[property="og:latitude"]').attr('content')*1);
+		var longitude = clean($('meta[property="og:longitude"]').attr('content')*1);
+		var description = $('#ViewItemPage').text();
 		// console.log('AD =>', ad);
-		if (ad.length > 5) {
-			ad = '{"address":"'+ad.replace('Afficher la carte','')+'","price":"'+price+'","url":"'+url_page1+'","title_ad":"'+title_ad+'","latitude":'+latitude+',"longitude":'+longitude+'}';
-			ad = ad.replace(/(\r\n|\n|\r)/gm,"");
-			ad = ad.replace(/    /g,'');
-		} else {
+		if (ad.length < 5) {
 			console.log("[Empty ad]");
+			console.log("[This is probably a parse error]");
 			return test_next(req, res, next);
 		}
+
+		ad = {address: address, price: price, url: url, title_ad: title_ad,
+			latitude: latitude, longitude: longitude, description: description};
 		console.log('json ===>',ad);
 
-		address[index_site] = ad;
-		ad = JSON.parse(ad);
-
-		beaches.push([ad.address, ad.price, ad.latitude, ad.longitude, ad.url, ad.title_ad]);
+		beaches.push(ad);
 
 		// Submit to the DB HAHA WHAT JK WEBSCALE
 		console.log('Insert to the database...');
@@ -134,7 +140,7 @@ var first_page = function(req, res, next) {
 	if (10 <= counter) return;
 	// url = 'http://www.kijiji.ca/b-appartement-condo/ville-de-quebec/c37l1700124r2.0?ad=offering';
 	if (url === "") return;
-	request(url, function(error, response, html){
+	cached_requester(url, function(error, response, html){
 		if (error) {
 			console.log("ERROR FIRST PAGE:", error);
 			return;
