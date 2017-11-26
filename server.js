@@ -59,7 +59,7 @@ var test_next = function(req, res, next) {
 		var $ = cheerio.load(html1, {
 			normalizeWhitespace: true,
 		});
-		var ad = $('.ad-attributes > tr:nth-child(3) > td:nth-child(2)').text();
+		var ad = $('#ViewItemPage').text();
 		// console.log('ad =>',ad);
 		var url_page1 = response.request.uri.href;
 		var price     = $('[itemprop="price"]').text();
