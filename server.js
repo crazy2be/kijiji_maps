@@ -16,12 +16,6 @@ var address    = [];
 var index_site = -1;
 var counter = 0;
 
-//MogoDB
-//var monk = require('monk');
-//var MongoClient = require('mongodb').MongoClient
-//    , format = require('util').format;
-//var db = monk('localhost:27017/nodetest1');
-
 function cached_requester(url, cb) {
 	var fname = 'html/' + encodeURIComponent(url);
 	console.log("Caching to ", fname);
@@ -37,16 +31,9 @@ function cached_requester(url, cb) {
 
 var beaches = [];
 
-// Make our db accessible to our router
-app.use(function(req,res,next){
-    //req.db = db;
-    next();
-});
-
-
 var test_next = function(req, res, next) {
 	index_site = index_site + 1;
-	if (undefined === sites[index_site]) {
+	if (sites[index_site] === undefined) {
 		var info = '{"info":['+address+']}';
 		req.body.url = url;
 		first_page(req, res, next);
@@ -54,13 +41,6 @@ var test_next = function(req, res, next) {
 		return;
     }
 	var url_page = 'http://www.kijiji.ca'+sites[index_site];
-	// var collection = req.db.get('usercollection');
-	//collection.find({'url': url_page}, {}, function(e, docs) {
-// 	if (undefined == docs || Object.keys(docs).length != 0) {
-// 		console.log('Prends dans la bdd...');
-// 		beaches.push([docs[0].address, docs[0].price, docs[0].lat, docs[0].lon, docs[0].url, docs[0].title_ad]);
-// 		return;
-// 	}
 	cached_requester(url_page, function(error, url, html1){
 		console.log('search page');
 		console.log('url_page =>', url);
@@ -68,19 +48,17 @@ var test_next = function(req, res, next) {
 			console.log("ERROR:", error);
 			return;
 		}
-		var $ = cheerio.load(html1, {
-			normalizeWhitespace: true,
-		});
-		// console.log('ad =>',ad);
-		var clean = s => (s||'').replace(/\"/g,'').replace("/\\/g",'').replace(/(\n|\r)/gm,'').replace(/    /g, '');
+		var $ = cheerio.load(html1, {normalizeWhitespace: true});
+		var clean = s => (console.log("s:", s), (s||'').replace(/\"/g,'').replace("/\\/g",'').replace(/(\n|\r)/gm,'').replace(/    /g, ''));
+
 		var address   = clean($('span[class^="address-"]').text());
 		var price     = clean($('span[class^="currentPrice-"]').text());
 		var title_ad  = clean($('h1').text());
-		var latitude  = clean($('meta[property="og:latitude"]').attr('content')*1);
-		var longitude = clean($('meta[property="og:longitude"]').attr('content')*1);
+		var latitude  = $('meta[property="og:latitude"]').attr('content')*1;
+		var longitude = $('meta[property="og:longitude"]').attr('content')*1;
 		var description = $('#ViewItemPage').text();
 		// console.log('AD =>', ad);
-		if (ad.length < 5) {
+		if (description.length < 5) {
 			console.log("[Empty ad]");
 			console.log("[This is probably a parse error]");
 			return test_next(req, res, next);
@@ -89,26 +67,14 @@ var test_next = function(req, res, next) {
 		ad = {address: address, price: price, url: url, title_ad: title_ad,
 			latitude: latitude, longitude: longitude, description: description};
 		console.log('json ===>',ad);
-
 		beaches.push(ad);
 
-		// Submit to the DB HAHA WHAT JK WEBSCALE
-		console.log('Insert to the database...');
-		console.log("collection.insert(", {
-			'address': ad.address,
-			'price': ad.price,
-			'lat': ad.latitude,
-			'lon': ad.longitude,
-			'url':ad.url,
-			'title_ad':ad.title_ad
-		});
 		test_next(req, res, next);
 	});
 };
 
 
 app.get('/maps', function(req, res, next){
-
 	res.render("index.ejs", {layout: false, lat:46.8357689, lon:-71.220735, zoom:12, beaches:JSON.stringify(beaches)});
 	next();
 });
