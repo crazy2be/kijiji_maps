@@ -17,17 +17,17 @@ var index_site = -1;
 var counter = 0;
 
 //MogoDB
-var monk = require('monk');
-var MongoClient = require('mongodb').MongoClient
-    , format = require('util').format;
-var db = monk('localhost:27017/nodetest1');
+//var monk = require('monk');
+//var MongoClient = require('mongodb').MongoClient
+//    , format = require('util').format;
+//var db = monk('localhost:27017/nodetest1');
 
 
 var beaches = [];
 
 // Make our db accessible to our router
 app.use(function(req,res,next){
-    req.db = db;
+    //req.db = db;
     next();
 });
 
@@ -42,70 +42,62 @@ var test_next = function(req, res, next) {
 		return;
     }
 	var url_page = 'http://www.kijiji.ca'+sites[index_site];
-	var collection = req.db.get('usercollection');
-	collection.find({'url': url_page}, {}, function(e, docs) {
-		if (undefined == docs || Object.keys(docs).length != 0) {
-			console.log('Prends dans la bdd...');
-			beaches.push([docs[0].address, docs[0].price, docs[0].lat, docs[0].lon, docs[0].url, docs[0].title_ad]);
+	// var collection = req.db.get('usercollection');
+	//collection.find({'url': url_page}, {}, function(e, docs) {
+// 	if (undefined == docs || Object.keys(docs).length != 0) {
+// 		console.log('Prends dans la bdd...');
+// 		beaches.push([docs[0].address, docs[0].price, docs[0].lat, docs[0].lon, docs[0].url, docs[0].title_ad]);
+// 		return;
+// 	}
+	request(url_page, function(error, response, html1){
+		console.log('search page');
+		console.log('url_page =>', response.request.uri.href);
+		if (error) {
+			console.log("ERROR:", error);
 			return;
 		}
-		request(url_page, function(error, response, html1){
-			console.log('search page');
-			console.log('url_page =>', response.request.uri.href);
-			if (error) {
-				console.log("ERROR:", error);
-				return;
-			}
-			var $ = cheerio.load(html1, {
-				normalizeWhitespace: true,
-			});
-			var ad = $('.ad-attributes > tr:nth-child(3) > td:nth-child(2)').text();
-			// console.log('ad =>',ad);
-			var url_page1 = response.request.uri.href;
-			var price     = $('[itemprop="price"]').text();
-			var title_ad  = $('h1').text();
-			var latitude  = $('meta[property="og:latitude"]').attr('content')*1;
-			var longitude = $('meta[property="og:longitude"]').attr('content')*1;
-			title_ad      = title_ad.replace(/\"/g,'');
-			title_ad      = title_ad.replace(/\\/g,'');
-			price         = price.replace(/\"/g,'');
-			ad            = ad.replace(/\"/g,'');
-			// console.log('AD =>', ad);
-			if (ad.length > 5) {
-				ad = '{"address":"'+ad.replace('Afficher la carte','')+'","price":"'+price+'","url":"'+url_page1+'","title_ad":"'+title_ad+'","latitude":'+latitude+',"longitude":'+longitude+'}';
-				ad = ad.replace(/(\r\n|\n|\r)/gm,"");
-				ad = ad.replace(/    /g,'');
-			} else {
-				console.log("[Empty ad]");
-				return;
-			}
-			console.log('json ===>',ad);
-
-			address[index_site] = ad;
-			ad = JSON.parse(ad);
-
-			beaches.push([ad.address, ad.price, ad.latitude, ad.longitude, ad.url, ad.title_ad]);
-
-			// Submit to the DB
-			console.log('Insert to the database...');
-			collection.insert({
-				'address': ad.address,
-				'price': ad.price,
-				'lat': ad.latitude,
-				'lon': ad.longitude,
-				'url':ad.url,
-				'title_ad':ad.title_ad
-			}, function (err, doc) {
-				if (err) {
-					// If it failed, return error
-					console.log("There was a problem adding the information to the database.");
-				}
-			});
+		var $ = cheerio.load(html1, {
+			normalizeWhitespace: true,
 		});
-	}).then(function(){
-			test_next(req, res, next);
+		var ad = $('.ad-attributes > tr:nth-child(3) > td:nth-child(2)').text();
+		// console.log('ad =>',ad);
+		var url_page1 = response.request.uri.href;
+		var price     = $('[itemprop="price"]').text();
+		var title_ad  = $('h1').text();
+		var latitude  = $('meta[property="og:latitude"]').attr('content')*1;
+		var longitude = $('meta[property="og:longitude"]').attr('content')*1;
+		title_ad      = title_ad.replace(/\"/g,'');
+		title_ad      = title_ad.replace(/\\/g,'');
+		price         = price.replace(/\"/g,'');
+		ad            = ad.replace(/\"/g,'');
+		// console.log('AD =>', ad);
+		if (ad.length > 5) {
+			ad = '{"address":"'+ad.replace('Afficher la carte','')+'","price":"'+price+'","url":"'+url_page1+'","title_ad":"'+title_ad+'","latitude":'+latitude+',"longitude":'+longitude+'}';
+			ad = ad.replace(/(\r\n|\n|\r)/gm,"");
+			ad = ad.replace(/    /g,'');
+		} else {
+			console.log("[Empty ad]");
+			return test_next(req, res, next);
+		}
+		console.log('json ===>',ad);
+
+		address[index_site] = ad;
+		ad = JSON.parse(ad);
+
+		beaches.push([ad.address, ad.price, ad.latitude, ad.longitude, ad.url, ad.title_ad]);
+
+		// Submit to the DB HAHA WHAT JK WEBSCALE
+		console.log('Insert to the database...');
+		console.log("collection.insert(", {
+			'address': ad.address,
+			'price': ad.price,
+			'lat': ad.latitude,
+			'lon': ad.longitude,
+			'url':ad.url,
+			'title_ad':ad.title_ad
+		});
+		test_next(req, res, next);
 	});
-	next();
 };
 
 
