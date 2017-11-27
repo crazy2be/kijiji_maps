@@ -22,6 +22,7 @@ function cached_requester(url, cb) {
 var global_beaches = [];
 
 var search_page = function(url) {
+	if(!url) return
 	console.log('url ======>', url);
 	if (url == '') return;
 	cached_requester(url, function(error, url, html) {
