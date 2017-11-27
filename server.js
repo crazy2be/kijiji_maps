@@ -22,7 +22,7 @@ function cached_requester(url, cb) {
 var global_beaches = [];
 
 var search_page = function(url) {
-	if(!url) return
+	if(!url) return;
 	console.log('url ======>', url);
 	if (url == '') return;
 	cached_requester(url, function(error, url, html) {
@@ -32,7 +32,7 @@ var search_page = function(url) {
 		}
 		console.log('URL ===>', url);
 		var $ = cheerio.load(html);
-		var href2url = href => "http://www.kijiji.ca" + href;
+		var href2url = href => href && ("http://www.kijiji.ca" + href) || href;
 		var urls = [].map.call($('a.title'), url => href2url(url.attribs.href));
 		var url_next = href2url($(".pagination > a[title='Next']").attr('href'));
 		console.log('url_next ===>', url_next);
