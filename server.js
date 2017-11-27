@@ -62,7 +62,7 @@ var ad_page = function(urls, cb) {
 		var title  = clean($('h1').text());
 		var lat  = $('meta[property="og:latitude"]').attr('content')*1;
 		var lon = $('meta[property="og:longitude"]').attr('content')*1;
-		var description = $('#ViewItemPage').text();
+		var description = $('#ViewItemPage').html();
 
 		if (description.length < 5) {
 			console.log("[Empty ad]");
@@ -83,9 +83,10 @@ var app = express();
 app.get('/', (req, res, next) => {
 	res.render("index.ejs", {
 		layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON,
-		zoom: 12, beaches: JSON.stringify(global_beaches)});
+		zoom: 12, beaches: Buffer.from(JSON.stringify(global_beaches)).toString("base64")});
 	next();
 });
+app.use("/", express.static("./"));
 
 app.listen('8081');
 console.log('Magic happens on port 8081');

@@ -1,10 +1,18 @@
-<html>
+<html id="reset">
 	<head>
 		<title>Kijiji Maps</title>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
 		<script>
-		var beaches =  <%- beaches %>
+		var beachesJSON = "<%- beaches %>";
+		var beaches = JSON.parse(atob(beachesJSON));
 		console.log(beaches);
+
+		function getHtml(html, query) {
+			var elem = document.createElement("div");
+			elem.innerHTML = html;
+			elem = elem.querySelectorAll(query)[0];
+			return elem && elem.innerHTML || "";
+		}
 
 		function initMap() {
 			var map = new google.maps.Map(document.getElementById('map'), {
@@ -12,32 +20,36 @@
 				zoom: <%=zoom%>,
 				mapTypeId: google.maps.MapTypeId.ROADMAP
 			});
+
 			var selected = -1;
 			var markers = [];
 			var favs = JSON.parse(localStorage['favs'] || '{}');
-			for (let i = 0; i < beaches.length; i++) {
-				let beach = beaches[i];
-				let marker = new google.maps.Marker({
+			beaches.forEach(beach => {
+				var marker = new google.maps.Marker({
 					position: new google.maps.LatLng(beach.lat, beach.lon),
 					map: map,
 					title: beach[0]
 				});
 				markers.push(marker);
 				starFav(i);
+				
 				google.maps.event.addListener(marker, 'click', () => {
-					info.innerHTML = [
+					var html = [
 						'<h3>', beach.title, '</h3>',
 						'<a href="', beach.url, '" target="_blank">View on Kijiji</a>', '<br>',
 						beach.price, '<br>',
 						beach.address, '<br>',
-						beach.description
+						getHtml(beach.description, `#AttributeList`),
+						getHtml(beach.description, `[class^="descriptionContainer"]`)
 					].join(' ');
+
+					info.innerHTML = html;
 					selected = i;
 					starFav(selected);
 				});
 				function starFav(i) {
 					var url = beaches[i].url;
-					fav.innerText = favs[url] ? '★': '☆';
+					fav.innerText = favs[url] ? 'â˜…': 'â˜†';
 					markers[i].setIcon(favs[url] ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' : '')
 				}
 				fav.onclick = () => {
@@ -46,8 +58,7 @@
 					starFav(selected);
 					localStorage['favs'] = JSON.stringify(favs);
 				};
-			}
-
+			});
 		}
 		</script>
 		<script async defer src="https://maps.googleapis.com/maps/api/js?callback=initMap&key=AIzaSyCNZ_7_6fNE7ppMd2PBY9d3ziZHwmQYh9M"></script>
@@ -69,12 +80,14 @@
 			font-size: 200%;
 			float: right;
 		}
+
 		</style>
+		<link rel="stylesheet" href="/css/kijiji.css">
 	</head>
 	<body>
 		<div id="map"></div>
-		<div id="sidebar">
-			<div id="fav">☆</div>
+		<div id="sidebar" class="fes-pagelet">
+			<div id="fav">â˜†</div>
 			<div id="info"></div>
 		</div>
 	</body>
