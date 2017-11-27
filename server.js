@@ -83,7 +83,7 @@ var app = express();
 app.get('/', (req, res, next) => {
 	res.render("index.ejs", {
 		layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON,
-		zoom: 12, beaches: Buffer.from(JSON.stringify(global_beaches)).toString("base64")});
+		zoom: 12, beaches: Buffer.from(JSON.stringify(global_beaches.slice(0, 2))).toString("base64")});
 	next();
 });
 app.use("/", express.static("./"));

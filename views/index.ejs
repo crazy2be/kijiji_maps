@@ -24,11 +24,11 @@
 			var selected = -1;
 			var markers = [];
 			var favs = JSON.parse(localStorage['favs'] || '{}');
-			beaches.forEach(beach => {
+			beaches.forEach((beach, i) => {
 				var marker = new google.maps.Marker({
 					position: new google.maps.LatLng(beach.lat, beach.lon),
 					map: map,
-					title: beach[0]
+					title: beach.title
 				});
 				markers.push(marker);
 				starFav(i);
@@ -47,18 +47,19 @@
 					selected = i;
 					starFav(selected);
 				});
-				function starFav(i) {
-					var url = beaches[i].url;
-					fav.innerText = favs[url] ? 'â˜…': 'â˜†';
-					markers[i].setIcon(favs[url] ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' : '')
-				}
 				fav.onclick = () => {
+					console.log(selected);
 					var url = beaches[selected].url;
-					favs[url] = !favs[url]
+					favs[url] = !favs[url];
 					starFav(selected);
 					localStorage['favs'] = JSON.stringify(favs);
 				};
 			});
+			function starFav(i) {
+				var url = beaches[i].url;
+				fav.innerText = favs[url] ? '★': '☆';
+				markers[i].setIcon(favs[url] ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' : '')
+			}
 		}
 		</script>
 		<script async defer src="https://maps.googleapis.com/maps/api/js?callback=initMap&key=AIzaSyCNZ_7_6fNE7ppMd2PBY9d3ziZHwmQYh9M"></script>
@@ -87,7 +88,7 @@
 	<body>
 		<div id="map"></div>
 		<div id="sidebar" class="fes-pagelet">
-			<div id="fav">â˜†</div>
+			<div id="fav">☆</div>
 			<div id="info"></div>
 		</div>
 	</body>
