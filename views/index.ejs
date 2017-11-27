@@ -21,12 +21,17 @@
 				mapTypeId: google.maps.MapTypeId.ROADMAP
 			});
 
+			var selected = -1;
+			var markers = [];
+			var favs = JSON.parse(localStorage['favs'] || '{}');
 			beaches.forEach(beach => {
 				var marker = new google.maps.Marker({
 					position: new google.maps.LatLng(beach.lat, beach.lon),
 					map: map,
 					title: beach[0]
 				});
+				markers.push(marker);
+				starFav(i);
 				
 				google.maps.event.addListener(marker, 'click', () => {
 					var html = [
@@ -39,7 +44,20 @@
 					].join(' ');
 
 					info.innerHTML = html;
+					selected = i;
+					starFav(selected);
 				});
+				function starFav(i) {
+					var url = beaches[i].url;
+					fav.innerText = favs[url] ? 'â˜…': 'â˜†';
+					markers[i].setIcon(favs[url] ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' : '')
+				}
+				fav.onclick = () => {
+					var url = beaches[selected].url;
+					favs[url] = !favs[url]
+					starFav(selected);
+					localStorage['favs'] = JSON.stringify(favs);
+				};
 			});
 		}
 		</script>
@@ -51,18 +69,26 @@
 			width: 80%;
 			height: 100%;
 		}
-		#info {
+		#sidebar {
 			position: absolute;
 			width: 19%;
 			height: 100%;
 			right: 0.5%;
 			overflow-x: scroll;
 		}
+		#fav {
+			font-size: 200%;
+			float: right;
+		}
+
 		</style>
 		<link rel="stylesheet" href="/css/kijiji.css">
 	</head>
 	<body>
 		<div id="map"></div>
-		<div id="info" class="fes-pagelet"></div>
+		<div id="sidebar" class="fes-pagelet">
+			<div id="fav">â˜†</div>
+			<div id="info"></div>
+		</div>
 	</body>
 </html>
