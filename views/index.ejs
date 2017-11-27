@@ -3,8 +3,15 @@
 		<title>Kijiji Maps</title>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
 		<script>
-		var beaches =  <%- beaches %>
+		var beachesJSON = "<%- beaches %>";
+		var beaches = JSON.parse(atob(beachesJSON));
 		console.log(beaches);
+
+		function getText(html) {
+			var elem = document.createElement("div");
+			elem.innerHTML = html;
+			return elem.innerText;
+		}
 
 		function initMap() {
 			var map = new google.maps.Map(document.getElementById('map'), {
@@ -25,7 +32,7 @@
 					'<a href="', beach.url, '" target="_blank">View on Kijiji</a>', '<br>',
 					beach.price, '<br>',
 					beach.address, '<br>',
-					beach.description
+					getText(beach.description)
 				].join(' ');
 				google.maps.event.addListener(marker, 'click', () => {
 					info.innerHTML = html;

@@ -62,7 +62,7 @@ var ad_page = function(urls, cb) {
 		var title  = clean($('h1').text());
 		var lat  = $('meta[property="og:latitude"]').attr('content')*1;
 		var lon = $('meta[property="og:longitude"]').attr('content')*1;
-		var description = $('#ViewItemPage').text();
+		var description = $('#ViewItemPage').html();
 
 		if (description.length < 5) {
 			console.log("[Empty ad]");
@@ -83,7 +83,7 @@ var app = express();
 app.get('/', (req, res, next) => {
 	res.render("index.ejs", {
 		layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON,
-		zoom: 12, beaches: JSON.stringify(global_beaches)});
+		zoom: 12, beaches: Buffer.from(JSON.stringify(global_beaches)).toString("base64")});
 	next();
 });
 
@@ -91,4 +91,4 @@ app.listen('8081');
 console.log('Magic happens on port 8081');
 exports = module.exports = app;
 
-search_page("https://www.kijiji.ca/b-real-estate/kitchener-waterloo/c34l1700212r5.0?address=155+King+St+S%2C+Waterloo%2C+ON&ll=43.461277,-80.521149");
+search_page("https://www.kijiji.ca/b-house-rental/kitchener-waterloo/c43l1700212r5.0?address=155+King+St+S%2C+Waterloo%2C+ON&ll=43.461277,-80.521149");
