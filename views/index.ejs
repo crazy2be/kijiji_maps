@@ -12,25 +12,42 @@
 				zoom: <%=zoom%>,
 				mapTypeId: google.maps.MapTypeId.ROADMAP
 			});
-
-			for (var i = 0; i < beaches.length; i++) {
-				var beach = beaches[i];
-				var marker = new google.maps.Marker({
+			var selected = -1;
+			var markers = [];
+			var favs = JSON.parse(localStorage['favs'] || '{}');
+			for (let i = 0; i < beaches.length; i++) {
+				let beach = beaches[i];
+				let marker = new google.maps.Marker({
 					position: new google.maps.LatLng(beach.lat, beach.lon),
 					map: map,
 					title: beach[0]
 				});
-				let html = [
-					'<h3>', beach.title, '</h3>',
-					'<a href="', beach.url, '" target="_blank">View on Kijiji</a>', '<br>',
-					beach.price, '<br>',
-					beach.address, '<br>',
-					beach.description
-				].join(' ');
+				markers.push(marker);
+				starFav(i);
 				google.maps.event.addListener(marker, 'click', () => {
-					info.innerHTML = html;
+					info.innerHTML = [
+						'<h3>', beach.title, '</h3>',
+						'<a href="', beach.url, '" target="_blank">View on Kijiji</a>', '<br>',
+						beach.price, '<br>',
+						beach.address, '<br>',
+						beach.description
+					].join(' ');
+					selected = i;
+					starFav(selected);
 				});
+				function starFav(i) {
+					var url = beaches[i].url;
+					fav.innerText = favs[url] ? '★': '☆';
+					markers[i].setIcon(favs[url] ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' : '')
+				}
+				fav.onclick = () => {
+					var url = beaches[selected].url;
+					favs[url] = !favs[url]
+					starFav(selected);
+					localStorage['favs'] = JSON.stringify(favs);
+				};
 			}
+
 		}
 		</script>
 		<script async defer src="https://maps.googleapis.com/maps/api/js?callback=initMap&key=AIzaSyCNZ_7_6fNE7ppMd2PBY9d3ziZHwmQYh9M"></script>
@@ -41,17 +58,24 @@
 			width: 80%;
 			height: 100%;
 		}
-		#info {
+		#sidebar {
 			position: absolute;
 			width: 19%;
 			height: 100%;
 			right: 0.5%;
 			overflow-x: scroll;
 		}
+		#fav {
+			font-size: 200%;
+			float: right;
+		}
 		</style>
 	</head>
 	<body>
 		<div id="map"></div>
-		<div id="info"></div>
+		<div id="sidebar">
+			<div id="fav">☆</div>
+			<div id="info"></div>
+		</div>
 	</body>
 </html>

@@ -91,4 +91,4 @@ app.listen('8081');
 console.log('Magic happens on port 8081');
 exports = module.exports = app;
 
-search_page("https://www.kijiji.ca/b-real-estate/kitchener-waterloo/c34l1700212r5.0?address=155+King+St+S%2C+Waterloo%2C+ON&ll=43.461277,-80.521149");
+search_page("https://www.kijiji.ca/b-house-rental/kitchener-waterloo/c43l1700212r5.0?address=155+King+St+S%2C+Waterloo%2C+ON&ll=43.461277,-80.521149");
