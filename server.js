@@ -86,6 +86,7 @@ app.get('/', (req, res, next) => {
 		zoom: 12, beaches: Buffer.from(JSON.stringify(global_beaches)).toString("base64")});
 	next();
 });
+app.use("/", express.static("./"));
 
 app.listen('8081');
 console.log('Magic happens on port 8081');
