@@ -2,68 +2,6 @@
 	<head>
 		<title>Kijiji Maps</title>
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
-		<script>
-		var beachesJSON = "<%- beaches %>";
-		var beaches = JSON.parse(atob(beachesJSON));
-		console.log(beaches);
-
-		function getHtml(html, query) {
-			var elem = document.createElement("div");
-			elem.innerHTML = html;
-			elem = elem.querySelectorAll(query)[0];
-			return elem && elem.innerHTML || "";
-		}
-
-		function initMap() {
-			var map = new google.maps.Map(document.getElementById('map'), {
-				center: new google.maps.LatLng(<%=lat%>, <%=lon%>),
-				zoom: <%=zoom%>,
-				mapTypeId: google.maps.MapTypeId.ROADMAP,
-				gestureHandling: "greedy"
-			});
-
-			var selected = -1;
-			var markers = [];
-			var favs = JSON.parse(localStorage['favs'] || '{}');
-			beaches.forEach((beach, i) => {
-				var marker = new google.maps.Marker({
-					position: new google.maps.LatLng(beach.lat, beach.lon),
-					map: map,
-					title: beach.title
-				});
-				markers.push(marker);
-				starFav(i);
-				
-				google.maps.event.addListener(marker, 'click', () => {
-					var html = [
-						'<h3>', beach.title, '</h3>',
-						'<a href="', beach.url, '" target="_blank">View on Kijiji</a>', '<br>',
-						beach.price, '<br>',
-						beach.address, '<br>',
-						getHtml(beach.description, `#AttributeList`),
-						getHtml(beach.description, `[class^="descriptionContainer"]`)
-					].join(' ');
-
-					info.innerHTML = html;
-					selected = i;
-					starFav(selected);
-				});
-				fav.onclick = () => {
-					console.log(selected);
-					var url = beaches[selected].url;
-					favs[url] = !favs[url];
-					starFav(selected);
-					localStorage['favs'] = JSON.stringify(favs);
-				};
-			});
-			function starFav(i) {
-				var url = beaches[i].url;
-				fav.innerText = favs[url] ? '★': '☆';
-				markers[i].setIcon(favs[url] ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' : '')
-			}
-		}
-		</script>
-		<script async defer src="https://maps.googleapis.com/maps/api/js?callback=initMap&key=AIzaSyCNZ_7_6fNE7ppMd2PBY9d3ziZHwmQYh9M"></script>
 		<style>
 		body { margin: 0; padding: 0; }
 		#map {
@@ -93,4 +31,147 @@
 			<div id="info"></div>
 		</div>
 	</body>
+	<script>
+		var beachesJSON = "<%- beaches %>";
+		var beaches = JSON.parse(atob(beachesJSON));
+		console.log(beaches);
+
+		var glyphLookup = {};
+		function makeGlyphUrl(width, edges) {
+			var argsHash = JSON.stringify(arguments);
+			if(!(argsHash in glyphLookup)) {
+				glyphLookup[argsHash] = makeGlyphUrlInternal.apply(this, arguments);
+			}
+			return glyphLookup[argsHash];
+		}
+		function makeGlyphUrlInternal(width, edges, shapeColor, backgroundColor) {
+			var canvas = document.createElement("canvas");
+
+			canvas.width = width + "";
+			canvas.height = width + "";
+
+			var context = canvas.getContext("2d");
+
+			var angleIncrease = Math.PI / edges * 2;
+
+			context.beginPath();
+			context.arc(width / 2, width / 2, width / 2, 0, 2 * Math.PI, false);
+			context.fillStyle = backgroundColor;
+			context.fill();
+
+			context.fillStyle = shapeColor;
+			context.beginPath();
+			var angle = 0;//Math.PI / 4;
+			var x = (1 + Math.cos(angle)) * (width / 2);
+			var y = (1 + Math.sin(angle)) * (width / 2);
+			context.moveTo(x, y);
+			for(var i = 0; i < edges; i++) {
+				x = (1 + Math.cos(angle)) * (width / 2);
+				y = (1 + Math.sin(angle)) * (width / 2);
+				angle += angleIncrease;
+				context.lineTo(x, y);
+			}
+			//context.lineTo(0, 0);
+			context.closePath();
+			context.fill();
+
+			var url = canvas.toDataURL("image/png");
+			return url;
+		}
+
+		function getHtml(html, query, fnc) {
+			fnc = fnc || ((elem) => elem.innerHTML);
+			var elem = document.createElement("div");
+			elem.innerHTML = html;
+			elem = elem.querySelectorAll(query)[0];
+			return elem && fnc(elem) || "";
+		}
+
+		var favs = JSON.parse(localStorage['favs'] || '{}');
+		var selectedBeach = {};
+		fav.onclick = () => {
+			var url = selectedBeach.url;
+			fav.innerText = favs[url] ? '★': '☆';
+			favs[url] = !favs[url];
+			localStorage['favs'] = JSON.stringify(favs);
+			setIcon(selectedBeach);
+		};
+
+		function setIcon(beach) {
+			var marker = beach.marker;
+
+			var attributesElem = getHtml(beach.description, `#AttributeList`, elem => elem).children[0];
+			var datePosted = getHtml(beach.description, `[class^="datePosted"]`, elem => elem.children[0].title);
+
+			var age = (+new Date() - +new Date(datePosted)) / (1000 * 60 * 60 * 24) || 30;
+			if(age < 0) age = 0;
+			var ageOpacity = 1;// Math.max(0.5, 1 - age / 30);
+			var ageHue = Math.max(0, 1 - age / 7) * 110;
+			if(age < 1) {
+				ageHue = Math.max(0, 1 - age) * 50 + 150;
+			}
+
+			var bedrooms = 0;
+			Array.from(attributesElem.children).forEach(attribute => {
+				var key = attribute.children[0].children[1].getAttribute("xlink:href");
+				var value = attribute.children[1].children[1].innerText;
+				if(key === "#icon-attributes-numberbedrooms") {
+					bedrooms = parseFloat(value);
+				}
+			});
+
+			var backgroundColor = `hsla(0, 0%, 0%, 1)`;
+			if(favs[beach.url]) {
+				backgroundColor = "green";
+			}
+
+			marker.setIcon({
+				url: makeGlyphUrl(16, bedrooms, `hsla(${ageHue}, 100%, 65%, 1)`, backgroundColor),
+				size: new google.maps.Size(16, 16),
+				origin: new google.maps.Point(0, 0),
+				anchor: new google.maps.Point(0, 0)
+			});
+		}
+
+		function initMap() {
+			initMapInternal();
+		}
+
+		function initMapInternal() {
+			var map = new google.maps.Map(document.getElementById('map'), {
+				center: new google.maps.LatLng(<%=lat%>, <%=lon%>),
+				zoom: <%=zoom%>,
+				mapTypeId: google.maps.MapTypeId.ROADMAP,
+				gestureHandling: "greedy"
+			});
+
+			beaches.forEach((beach, i) => {
+				var marker = new google.maps.Marker({
+					position: new google.maps.LatLng(beach.lat, beach.lon),
+					map: map
+				});
+				beach.marker = marker;
+
+				setIcon(beach);
+				
+				google.maps.event.addListener(marker, 'click', () => {
+					var html = [
+						'Posted: ', getHtml(beach.description, `[class^="datePosted"]`),'<br>',
+						'<h3>', beach.title, '</h3>',
+						'<a href="', beach.url, '" target="_blank">View on Kijiji</a>', '<br>',
+						beach.price, '<br>',
+						beach.address, '<br>',
+						getHtml(beach.description, `#AttributeList`),
+						getHtml(beach.description, `[class^="descriptionContainer"]`)
+					].join(' ');
+					info.innerHTML = html;
+					selectedBeach.selected = false;
+					selectedBeach = beach;
+					beach.selected = true;
+					setIcon(beach);
+				});
+			});
+		}
+		</script>
+		<script async defer src="https://maps.googleapis.com/maps/api/js?callback=initMap&key=AIzaSyCNZ_7_6fNE7ppMd2PBY9d3ziZHwmQYh9M"></script>
 </html>

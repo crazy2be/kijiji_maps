@@ -4,6 +4,7 @@
   "description": "",
   "main": "server.js",
   "dependencies": {
+    "@types/node": "^8.0.53",
     "body-parser": "^1.15.0",
     "bson": "^0.4.23",
     "cheerio": "^0.22.0",

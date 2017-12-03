@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        //"outDir": "./dist/",
+        "sourceMap": true,
+        "strict": false,
+        "module": "commonjs",
+        "target": "es2017",
+        "jsx": "react",
+        "types": [
+            "node"
+        ]
+    }
+}
