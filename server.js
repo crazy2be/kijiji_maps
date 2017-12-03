@@ -13,7 +13,7 @@ function cached_requester(url) {
         var fname = 'html/' + encodeURIComponent(url);
         const exists = fs.existsSync(fname);
         const stats = exists && fs.statSync(fname);
-        let isStale = stats && ((+stats.mtime + 1000 * 60 * 60 * 1) < +new Date());
+        let isStale = stats && ((+stats.mtime + 1000 * 60 * 60 * 24) < +new Date());
         if (isStale) {
             console.log("stale", stats.mtime);
         }
