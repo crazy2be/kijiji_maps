@@ -124,6 +124,9 @@
 			if(favs[beach.url]) {
 				backgroundColor = "green";
 			}
+			if(beach.selected) {
+				backgroundColor = "blue";
+			}
 
 			marker.setIcon({
 				url: makeGlyphUrl(16, bedrooms, `hsla(${ageHue}, 100%, 65%, 1)`, backgroundColor),
@@ -166,6 +169,9 @@
 					].join(' ');
 					info.innerHTML = html;
 					selectedBeach.selected = false;
+					if(selectedBeach.url) {
+						setIcon(selectedBeach);
+					}
 					selectedBeach = beach;
 					beach.selected = true;
 					setIcon(beach);
