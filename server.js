@@ -2,6 +2,7 @@ var express = require('express');
 var fs = require('fs');
 var request = require('request');
 var cheerio = require('cheerio');
+var sleep = require('sleep');
 
 var DEFAULT_LAT = 43.461277;
 var DEFAULT_LON = -80.521149;
@@ -16,6 +17,7 @@ function cached_requester(url, cb) {
 			if (!err) fs.writeFileSync(fname, html1);
 			cb(err, url, html1);
 		});
+		sleep.msleep(500); // If we don't, we seem to get stuck/throttled sometimes
 	}
 }
 
@@ -62,7 +64,7 @@ var ad_page = function(urls, cb) {
 		var title  = clean($('h1').text());
 		var lat  = $('meta[property="og:latitude"]').attr('content')*1;
 		var lon = $('meta[property="og:longitude"]').attr('content')*1;
-		var description = $('#ViewItemPage').text();
+		var description = $('#AttributeList').text() + "<br />" + $('div[class^="descriptionContainer-"]').text();
 
 		if (description.length < 5) {
 			console.log("[Empty ad]");
@@ -83,7 +85,8 @@ var app = express();
 app.get('/', (req, res, next) => {
 	res.render("index.ejs", {
 		layout: false, lat: DEFAULT_LAT, lon: DEFAULT_LON,
-		zoom: 12, beaches: JSON.stringify(global_beaches)});
+		zoom: 12, beaches: JSON.stringify(global_beaches)
+	});
 	next();
 });
 
@@ -91,4 +94,6 @@ app.listen('8081');
 console.log('Magic happens on port 8081');
 exports = module.exports = app;
 
-search_page("https://www.kijiji.ca/b-house-rental/kitchener-waterloo/c43l1700212r5.0?address=155+King+St+S%2C+Waterloo%2C+ON&ll=43.461277,-80.521149");
+//search_page("https://www.kijiji.ca/b-microwave-cooker/kitchener-waterloo/microwave/k0c694l1700212");
+search_page("http://www.kijiji.ca/b-house-rental/kitchener-waterloo/c43l1700212r5.0?address=155+King+St+S%2C+Waterloo%2C+ON&ll=43.461277,-80.521149");
+//search_page("http://www.kijiji.ca/b-house-for-sale/kitchener-waterloo/c35l1700212r3.0?address=155+King+Street+S&ll=43.461277,-80.521149");

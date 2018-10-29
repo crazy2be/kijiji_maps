@@ -25,6 +25,7 @@
 				markers.push(marker);
 				starFav(i);
 				google.maps.event.addListener(marker, 'click', () => {
+					//info.innerHTML = '<iframe src="' + beach.url.replace('www.kijiji.ca', 'm.kijiji.ca') + '"></iframe>';
 					info.innerHTML = [
 						'<h3>', beach.title, '</h3>',
 						'<a href="', beach.url, '" target="_blank">View on Kijiji</a>', '<br>',
